@@ -1,0 +1,15 @@
+#!/usr/bin/env bpftrace
+
+#include <linux/skbuff.h>
+#include <linux/ip.h>
+#include <linux/netdevice.h>
+#include <linux/netfilter/nf_conntrack_tcp.h>
+#include <net/ip.h>
+
+kprobe:dev_change_flags
+{
+    $dev=( struct net_device *)arg0;
+    $ifindex=$dev->ifindex;
+    $ifname=$dev->name;
+    printf("#### if %d name %s\n process %s pid %d func %s\n kstack: %s \n\n", $ifindex, $ifname, comm, pid, func, kstack);
+}
