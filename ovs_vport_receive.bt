@@ -1,0 +1,30 @@
+#!/usr/bin/env bpftrace
+
+// Add required kernel headers
+#include <linux/skbuff.h>
+#include <linux/netdevice.h>
+#include <net/ip.h>
+
+// 交换16位字节序 ($x<<8 & 0xff00) | ($x>>8)
+kprobe:ovs_vport_receive {
+    $skb = (struct sk_buff *)arg1;
+    $skb_dev_name = $skb->dev->name;
+    if ($skb->protocol == 0x0008) {
+        $iph = (struct iphdr *)($skb->head + $skb->network_header);
+        $protocol = $iph->protocol;
+        if ($protocol == 17) {
+            $srcip = $iph->saddr;
+            $dstip = $iph->daddr;
+            if ($srcip == 0x0d88e80a && $dstip == 0x0b88e80a) {
+                $ipid = ($iph->id << 8 & 0xff00) | ($iph->id >> 8);
+                $sip = ntop(AF_INET, $iph->saddr); 
+                $dip = ntop(AF_INET, $iph->daddr);
+                $udph = (struct udphdr *)($skb->head + $skb->transport_header);
+                $sport = ($udph->source << 8 &0xff00) | ($udph->source >> 8);
+                $dport = ($udph->dest << 8 &0xff00) | ($udph->dest >> 8);
+                printf("time: %ld, dev %d name %s, ipid: %d ", nsecs, $skb->dev->ifindex, $skb_dev_name, $ipid);
+                printf("udp: %s:%d->%s:%d\n", $sip, $sport, $dip, $dport);
+            }
+        }
+    }
+}

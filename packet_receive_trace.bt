@@ -1,0 +1,147 @@
+#!/usr/bin/env bpftrace
+
+#include <linux/skbuff.h>
+#include <linux/ip.h>
+#include <net/ip.h>
+
+tracepoint:net:net_dev_queue
+{
+    $skb = (struct sk_buff *)args->skbaddr;
+    $iph = (struct iphdr *)($skb->head + $skb->network_header);
+    $sip = ntop(AF_INET, $iph->saddr);
+    $dip = ntop(AF_INET, $iph->daddr);
+    $ipid = $iph->id;
+    $udph = (struct udphdr *)($skb->head + $skb->transport_header);
+    $dport = ($udph->dest >> 8) | (($udph->dest << 8) & 0xff00);
+    $sport = ($udph->source >> 8) | (($udph->source << 8) & 0xff00);
+    // printf("net_dev_queue call sip: %s, dip: %s, p: %d\n", $sip, $dip, $iph->protocol);
+    if ($iph->saddr == 0x0d88e80a && $iph->daddr == 0x0b88e80a && $iph->protocol == 17) {
+        printf("%ld net_dev_queue: %s:%d -> %s:%d %d ",
+             nsecs, $sip, $sport, $dip, $dport, $ipid);
+        printf("device=%s cpu=%d queue=%u\n", $skb->dev->name, $skb->sender_cpu, $skb->queue_mapping);
+        //if (@queue_latest != $skb->queue_mapping) {
+           // @queue_update=count();
+        //}
+        //@queue_latest=$skb->queue_mapping;
+        //printf("kstack: %s", kstack);
+    }
+}
+
+kprobe:__get_xps_queue_idx
+{
+    $skb = (struct sk_buff *)arg1;
+    $iph = (struct iphdr *)($skb->head + $skb->network_header);
+    $sip = ntop(AF_INET, $iph->saddr);
+    $dip = ntop(AF_INET, $iph->daddr);
+    $ipid = $iph->id;
+    $udph = (struct udphdr *)($skb->head + $skb->transport_header);
+    $dport = ($udph->dest >> 8) | (($udph->dest << 8) & 0xff00);
+    $sport = ($udph->source >> 8) | (($udph->source << 8) & 0xff00);
+    if ($iph->saddr == 0x0d88e80a && $iph->daddr == 0x0b88e80a && $iph->protocol == 17) {
+        printf("%ld xps_idx: %s:%d -> %s:%d %d ",
+             nsecs, $sip, $sport, $dip, $dport, $ipid);
+        printf("device=%s cpu=%d queue=%u\n", $skb->dev->name, $skb->sender_cpu, $skb->queue_mapping);
+    }
+}
+
+kprobe:netdev_pick_tx
+{
+    $skb = (struct sk_buff *)arg1;
+    $iph = (struct iphdr *)($skb->head + $skb->network_header);
+    $sip = ntop(AF_INET, $iph->saddr);
+    $dip = ntop(AF_INET, $iph->daddr);
+    $ipid = $iph->id;
+    $udph = (struct udphdr *)($skb->head + $skb->transport_header);
+    $dport = ($udph->dest >> 8) | (($udph->dest << 8) & 0xff00);
+    $sport = ($udph->source >> 8) | (($udph->source << 8) & 0xff00);
+    if ($iph->saddr == 0x0d88e80a && $iph->daddr == 0x0b88e80a && $iph->protocol == 17) {
+        printf("%ld netdev_pick_tx: %s:%d -> %s:%d %d ",
+             nsecs, $sip, $sport, $dip, $dport, $ipid);
+        printf("device=%s cpu=%d queue=%u\n", $skb->dev->name, $skb->sender_cpu, $skb->queue_mapping);
+    }
+}
+
+kprobe:ovs_vport_send
+{
+    $skb = (struct sk_buff *)arg1;
+    $iph = (struct iphdr *)($skb->head + $skb->network_header);
+    $sip = ntop(AF_INET, $iph->saddr);
+    $dip = ntop(AF_INET, $iph->daddr);
+    $ipid = $iph->id;
+    $udph = (struct udphdr *)($skb->head + $skb->transport_header);
+    $dport = ($udph->dest >> 8) | (($udph->dest << 8) & 0xff00);
+    $sport = ($udph->source >> 8) | (($udph->source << 8) & 0xff00);
+    if ($iph->saddr == 0x0d88e80a && $iph->daddr == 0x0b88e80a && $iph->protocol == 17) {
+        printf("%ld ovs_vport_send: %s:%d -> %s:%d %d ",
+             nsecs, $sip, $sport, $dip, $dport, $ipid);
+        printf("device=%s cpu=%d queue=%u\n", $skb->dev->name, $skb->sender_cpu, $skb->queue_mapping);
+    }
+}
+
+kprobe:ovs_vport_receive
+{
+    $skb = (struct sk_buff *)arg1;
+    $iph = (struct iphdr *)($skb->head + $skb->network_header);
+    $sip = ntop(AF_INET, $iph->saddr);
+    $dip = ntop(AF_INET, $iph->daddr);
+    $ipid = $iph->id;
+    $udph = (struct udphdr *)($skb->head + $skb->transport_header);
+    $dport = ($udph->dest >> 8) | (($udph->dest << 8) & 0xff00);
+    $sport = ($udph->source >> 8) | (($udph->source << 8) & 0xff00);
+    if ($iph->saddr == 0x0d88e80a && $iph->daddr == 0x0b88e80a && $iph->protocol == 17) {
+        printf("%ld ovs_vport_receive: %s:%d -> %s:%d %d ",
+             nsecs, $sip, $sport, $dip, $dport, $ipid);
+        printf("device=%s cpu=%d queue=%u\n", $skb->dev->name, $skb->sender_cpu, $skb->queue_mapping);
+    }
+}
+
+kprobe:netdev_frame_hook
+{
+    $skb = (struct sk_buff *)(*arg0);
+    $iph = (struct iphdr *)($skb->head + $skb->network_header);
+    $sip = ntop(AF_INET, $iph->saddr);
+    $dip = ntop(AF_INET, $iph->daddr);
+    $ipid = $iph->id;
+    $udph = (struct udphdr *)($skb->head + $skb->transport_header);
+    $dport = ($udph->dest >> 8) | (($udph->dest << 8) & 0xff00);
+    $sport = ($udph->source >> 8) | (($udph->source << 8) & 0xff00);
+    if ($iph->saddr == 0x0d88e80a && $iph->daddr == 0x0b88e80a && $iph->protocol == 17) {
+        printf("%ld netdev_frame_hook: %s:%d -> %s:%d %d ",
+             nsecs, $sip, $sport, $dip, $dport, $ipid);
+        printf("device=%s cpu=%d queue=%u\n", $skb->dev->name, $skb->sender_cpu, $skb->queue_mapping);
+    }
+}
+
+kprobe:ovs_dp_upcall
+{
+    $skb = (struct sk_buff *)arg1;
+    $iph = (struct iphdr *)($skb->head + $skb->network_header);
+    $sip = ntop(AF_INET, $iph->saddr);
+    $dip = ntop(AF_INET, $iph->daddr);
+    $ipid = $iph->id;
+    $udph = (struct udphdr *)($skb->head + $skb->transport_header);
+    $dport = ($udph->dest >> 8) | (($udph->dest << 8) & 0xff00);
+    $sport = ($udph->source >> 8) | (($udph->source << 8) & 0xff00);
+    if ($iph->saddr == 0x0d88e80a && $iph->daddr == 0x0b88e80a && $iph->protocol == 17) {
+        printf("%ld ovs_dp_upcall: %s:%d -> %s:%d %d ",
+             nsecs, $sip, $sport, $dip, $dport, $ipid);
+        printf("device=%s cpu=%d queue=%u\n", $skb->dev->name, $skb->sender_cpu, $skb->queue_mapping);
+    }
+}
+
+kprobe:napi_gro_receive
+{
+    $skb = (struct sk_buff *)arg1;
+    $iph = (struct iphdr *)($skb->head + $skb->network_header);
+    $sip = ntop(AF_INET, $iph->saddr);
+    $dip = ntop(AF_INET, $iph->daddr);
+    $ipid = $iph->id;
+    $udph = (struct udphdr *)($skb->head + $skb->transport_header);
+    $dport = ($udph->dest >> 8) | (($udph->dest << 8) & 0xff00);
+    $sport = ($udph->source >> 8) | (($udph->source << 8) & 0xff00);
+    if ($iph->saddr == 0x0d88e80a && $iph->daddr == 0x0b88e80a && $iph->protocol == 17) {
+        printf("%ld napi_gro_receive: %s:%d -> %s:%d %d ",
+             nsecs, $sip, $sport, $dip, $dport, $ipid);
+        printf("device=%s cpu=%d queue=%u\n", $skb->dev->name, $skb->sender_cpu, $skb->queue_mapping);
+    }
+}
