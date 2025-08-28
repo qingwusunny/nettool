@@ -1,0 +1,1 @@
+tshark -r em1-10.255.0.99.pcap9 -Y "(ip.src eq 10.255.0.99 and ip.dst eq 10.255.0.109 and icmp.type eq 8) or (ip.src eq 10.255.0.109 and ip.dst eq 10.255.0.99 and icmp.type eq 0)" -w 10.255.0.99_10.255.0.99_10.255.0.109.pcap9
