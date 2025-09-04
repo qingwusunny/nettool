@@ -348,12 +348,14 @@ def prepare_pcap2(srcip, dstip):
     if not os.path.exists(src_pcap):
         src_ori_pcap = srcip + ".pcap"
         src_tshark_cmd = 'tshark -r %s -Y "(ip.src eq %s and ip.dst eq %s and icmp.type eq 8) or (ip.src eq %s and ip.dst eq %s and icmp.type eq 0)" -w %s' % (PCAP_DIR + src_ori_pcap, srcip, dstip, dstip, srcip, src_pcap)
+        print(f"cmd src {src_tshark_cmd}")
         res = os.system(src_tshark_cmd)
         if res != 0:
             print(f"cmd {src_tshark_cmd} failed, errcode: {res}")
     if not os.path.exists(dst_pcap):
         dst_ori_pcap = dstip + ".pcap"
-        dst_tshark_cmd = 'tshark -r %s -Y "(ip.src eq %s and ip.dst eq %s and icmp.type eq 8) or (ip.src eq %s and ip.dst eq %s and icmp.type eq 0)" -w %s' % (PCAP_DIR + dst_ori_pcap, srcip, dstip, dstip, srcip, src_pcap)
+        dst_tshark_cmd = 'tshark -r %s -Y "(ip.src eq %s and ip.dst eq %s and icmp.type eq 8) or (ip.src eq %s and ip.dst eq %s and icmp.type eq 0)" -w %s' % (PCAP_DIR + dst_ori_pcap, srcip, dstip, dstip, srcip, dst_pcap)
+        print(f"cmd dst {dst_tshark_cmd}")
         res = os.system(dst_tshark_cmd)
         if res != 0:
             print(f"cmd {dst_tshark_cmd} failed, errcode: {res}")
@@ -379,8 +381,13 @@ if __name__ == "__main__":
         process(args.srcip, args.dstip, args.drop_csv)
     else:
         ips = list(NODE_MAP.keys())
-        for srcip in ips:
+        for srcip in ["10.255.0.104"]:
             for dstip in ips:
                 if srcip == dstip:
                     continue
                 process2(srcip, dstip, args.drop_csv)
+        for srcip in ips:
+            dstip = "10.255.0.104"
+            if srcip == dstip:
+                continue
+            process2(srcip, dstip, args.drop_csv)
