@@ -1,0 +1,66 @@
+#!/bin/bash
+# set_vhost_cpu_simple.sh
+
+VHOST_ID="$1"
+CPU_AFFINITY="$2"
+
+# 检查参数数量
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <vhost-id> <cpu-affinity>"
+    echo "Example: $0 10069 '0-111:2'"
+    exit 1
+fi
+
+# 参数验证
+if ! [[ "$VHOST_ID" =~ ^[0-9]+$ ]]; then
+    echo "Error: vhost-id must be a number"
+    exit 1
+fi
+
+if [ -z "$CPU_AFFINITY" ]; then
+    echo "Error: cpu-affinity cannot be empty"
+    exit 1
+fi
+
+# 查找进程
+PIDS=$(pidof "vhost-${VHOST_ID}" 2>/dev/null)
+
+if [ -z "$PIDS" ]; then
+    echo "Error: no processes found for vhost-${VHOST_ID}"
+    exit 1
+fi
+
+# 检查进程数量是否为8
+PID_COUNT=$(echo $PIDS | wc -w)
+if [ $PID_COUNT -ne 8 ]; then
+    echo "Error: expected 8 processes for vhost-${VHOST_ID}, found $PID_COUNT"
+    echo "Found PIDs: $PIDS"
+    exit 1
+fi
+
+echo "Found 8 processes for vhost-${VHOST_ID}: $PIDS"
+
+# 设置CPU亲和性
+for PID in $PIDS; do
+    echo "Setting CPU affinity for PID $PID to $CPU_AFFINITY"
+    
+    # 检查进程是否存在
+    if [ ! -d "/proc/$PID" ]; then
+        echo "Warning: PID $PID does not exist"
+        continue
+    fi
+    
+    # 执行taskset
+    if taskset -cp "$CPU_AFFINITY" "$PID" > /dev/null 2>&1; then
+        echo "Success: PID $PID set"
+        
+        # 验证设置
+        NEW_AFFINITY=$(taskset -p $PID 2>/dev/null | awk '{print $NF}')
+        echo "New affinity: $NEW_AFFINITY"
+    else
+        echo "Failed: PID $PID"
+    fi
+    echo
+done
+
+echo "CPU affinity setting completed for vhost-${VHOST_ID}"
